@@ -78,30 +78,47 @@ int main(void)
 
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 
-    float Pos[6] = {
-        -0.5f, -0.5f,
-         0.0f,  0.5f,
-         0.5f, -0.5f
+    float vertexBuffer[18] = {
+        -0.5f, -0.5f, 1.f, 0.0f, 0.0f, 1.0f,
+         0.0f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f,
+         0.5f, -0.5f, 0.f, 0.0f, 1.0f, 1.0f
     };
 
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), Pos, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), vertexBuffer, GL_STATIC_DRAW);
 
     // 启用索引为0得顶点属性（绑定顶点位置信息）
     glEnableVertexAttribArray(0);
     // 设置索引为0得顶点属性数据，这将决定着色器如何在一组顶点缓存数据中读取索引为0得数据（数据绑定）
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
+
+    // 绑定颜色信息
+    glEnableVertexAttribArray(1);
+    /**
+    * 参数解释：
+    * 1  属性布局索引
+    * 4  构成该属性得数量
+    * GL_FLOAT  数据类型
+    * GL_FALSE  是否标准化
+    * sizeof(float) * 6  每组顶点缓存数据得大小
+    * (const void*)(2 * sizeof(float))  当前属性在布局中得偏移
+    */
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
 
     std::string vertexShader =
         "#version 330 core\n"
         "\n"
         "layout(location = 0) in vec4 position;\n"
+        "layout(location = 1) in vec4 color;\n"
+        "\n"
+        "out vec4 v_Color;\n"
         "\n"
         "void main()\n"
         "{\n"
         "   gl_Position = position;\n"
+        "   v_Color = color;\n"
         "}\n";
 
     std::string fragmentShader =
@@ -109,9 +126,11 @@ int main(void)
         "\n"
         "layout(location = 0) out vec4 color;\n"
         "\n"
+        "in vec4 v_Color;\n"
+        "\n"
         "void main()\n"
         "{\n"
-        "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "   color = v_Color;\n"
         "}\n";
 
     unsigned int shaderProgram = CreateShader(vertexShader, fragmentShader);
