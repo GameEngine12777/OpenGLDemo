@@ -8,6 +8,27 @@
 #include <fstream>
 #include <sstream>
 
+#define ASSERT(x) if(!(x)) __debugbreak();
+#define GLCALL(x) GLClearError(); \
+    x;\
+    ASSERT(GLCheckError(__FILE__, #x, __LINE__));
+
+static void GLClearError()
+{
+    // https://docs.gl/gl4/glGetError
+    while (glGetError() != GL_NO_ERROR);
+}
+
+static bool GLCheckError(const char* file, const char* function, int line)
+{
+    while (GLenum error = glGetError())
+    {
+        std::cout << "[OpenGL error] (" << error << ") " << file << " : " << function << " : " << line << std::endl;
+        return false;
+    }
+    return true;
+}
+
 struct ShaderProgramSource
 {
     std::string VertexSource;
@@ -162,8 +183,12 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 请注意所有得索引缓存必须由无符号类型得数据组成
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        //GLClearError();
+        //// 请注意所有得索引缓存必须由无符号类型得数据组成
+        //glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
+        //ASSERT(GLCheckError());
+
+        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
