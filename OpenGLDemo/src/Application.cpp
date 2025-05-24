@@ -192,7 +192,7 @@ int main(void)
 
         GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
-        offset = std::fmod(offset + 0.01f, 1.0f);
+        offset = offset + 0.01f;
         glUniform1f(location, offset);
 
         /* Swap front and back buffers */

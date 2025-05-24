@@ -24,7 +24,26 @@ in vec4 v_Color;
 
 void main()
 {
-	// vec3 offsetColor = clamp(vec3(v_Color) + u_Offset, 0.0, 1.0);
-	vec3 offsetColor = mod(vec3(v_Color) + u_Offset, 1.0);
-	color = vec4(offsetColor, v_Color.w);
+	// 把颜色旋转（绕 RGB 通道循环）
+    float r = v_Color.r;
+    float g = v_Color.g;
+    float b = v_Color.b;
+
+    // 循环偏移颜色
+    float offset = mod(u_Offset, 3.0);
+    
+    vec3 rotatedColor;
+
+    if (offset < 1.0) {
+        float t = offset;
+        rotatedColor = vec3(mix(r, g, t), mix(g, b, t), mix(b, r, t)); // 做线性插值
+    } else if (offset < 2.0) {
+        float t = offset - 1.0;
+        rotatedColor = vec3(mix(g, b, t), mix(b, r, t), mix(r, g, t));
+    } else {
+        float t = offset - 2.0;
+        rotatedColor = vec3(mix(b, r, t), mix(r, g, t), mix(g, b, t));
+    }
+
+    color = vec4(rotatedColor, v_Color.a);
 };
