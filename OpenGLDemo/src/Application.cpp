@@ -5,6 +5,47 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
+#include <sstream>
+
+struct ShaderProgramSource
+{
+    std::string VertexSource;
+    std::string FragmentSource;
+};
+
+static ShaderProgramSource ParseShader(const std::string& filePath)
+{
+    std::ifstream stream(filePath);
+
+    enum class ShaderType
+    {
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
+
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+    while (getline(stream, line))
+    {
+        if (line.find("#shader") != std::string::npos)
+        {
+            if (line.find("vertex") != std::string::npos)
+            {
+                type = ShaderType::VERTEX;
+            }
+            else if (line.find("fragment") != std::string::npos)
+            {
+                type = ShaderType::FRAGMENT;
+            }
+        }
+        else
+        {
+            ss[(int)type] << line << "\n";
+        }
+    }
+    return { ss[0].str(), ss[1].str() };
+}
 
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
@@ -96,44 +137,11 @@ int main(void)
 
     // 绑定颜色信息
     glEnableVertexAttribArray(1);
-    /**
-    * 参数解释：
-    * 1  属性布局索引
-    * 4  构成该属性得数量
-    * GL_FLOAT  数据类型
-    * GL_FALSE  是否标准化
-    * sizeof(float) * 6  每组顶点缓存数据得大小
-    * (const void*)(2 * sizeof(float))  当前属性在布局中得偏移
-    */
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
 
-    std::string vertexShader =
-        "#version 330 core\n"
-        "\n"
-        "layout(location = 0) in vec4 position;\n" // 对应属性绑定 0
-        "layout(location = 1) in vec4 color;\n" // 对应属性绑定 1
-        "\n"
-        "out vec4 v_Color;\n" // 输出一个名为 v_Color 得参数
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = position;\n"
-        "   v_Color = color;\n"
-        "}\n";
+    ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
-    std::string fragmentShader =
-        "#version 330 core\n"
-        "\n"
-        "layout(location = 0) out vec4 color;\n" // 将颜色数据从片段着色器传递到光栅化阶段
-        "\n"
-        "in vec4 v_Color;\n" // 接受顶点着色器传出得名为 v_Color 得参数
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   color = v_Color;\n"
-        "}\n";
-
-    unsigned int shaderProgram = CreateShader(vertexShader, fragmentShader);
+    unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shaderProgram);
 
     /* Loop until the user closes the window */
