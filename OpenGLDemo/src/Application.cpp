@@ -110,10 +110,10 @@ int main(void)
     std::string vertexShader =
         "#version 330 core\n"
         "\n"
-        "layout(location = 0) in vec4 position;\n"
-        "layout(location = 1) in vec4 color;\n"
+        "layout(location = 0) in vec4 position;\n" // 对应属性绑定 0
+        "layout(location = 1) in vec4 color;\n" // 对应属性绑定 1
         "\n"
-        "out vec4 v_Color;\n"
+        "out vec4 v_Color;\n" // 输出一个名为 v_Color 得参数
         "\n"
         "void main()\n"
         "{\n"
@@ -124,9 +124,9 @@ int main(void)
     std::string fragmentShader =
         "#version 330 core\n"
         "\n"
-        "layout(location = 0) out vec4 color;\n"
+        "layout(location = 0) out vec4 color;\n" // 将颜色数据从片段着色器传递到光栅化阶段
         "\n"
-        "in vec4 v_Color;\n"
+        "in vec4 v_Color;\n" // 接受顶点着色器传出得名为 v_Color 得参数
         "\n"
         "void main()\n"
         "{\n"
