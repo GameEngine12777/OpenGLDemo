@@ -142,33 +142,56 @@ int main(void)
 
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 
-    float vertexBuffer[] = {
-        -0.5f, -0.5f, 1.f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, 0.f, 0.0f, 1.0f, 1.0f,
-         0.5f, -0.5f, 0.f, 0.0f, 1.0f, 1.0f,
-    };
+    const int numSegments = 100;  // 越大越圆
+    const float radius = 0.5f;
+    std::vector<float> vertexBuffer;
 
-    unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0,
-    };
+    // 中心点（白色或黑色）
+    vertexBuffer.push_back(0.0f); // x
+    vertexBuffer.push_back(0.0f); // y
+    vertexBuffer.push_back(1.0f); // r
+    vertexBuffer.push_back(1.0f); // g
+    vertexBuffer.push_back(1.0f); // b
+    vertexBuffer.push_back(1.0f); // a
+
+    for (int i = 0; i <= numSegments; ++i) {
+        float angle = (float)i / numSegments * 2.0f * 3.1415926;
+        float x = cos(angle) * radius;
+        float y = sin(angle) * radius;
+
+        // 将角度映射为颜色 (色相 -> RGB)，你可以使用 HSL 转 RGB
+        float hue = angle / (2.0f * 3.1415926);  // 范围 0~1
+
+        // 简化版：RGB 轮转
+        float r = fabs(fmod(hue * 3.0f + 0.0f, 3.0f) - 1.5f);
+        float g = fabs(fmod(hue * 3.0f + 2.0f, 3.0f) - 1.5f);
+        float b = fabs(fmod(hue * 3.0f + 4.0f, 3.0f) - 1.5f);
+
+        // clamp 到 0~1
+        r = std::min(std::max(r, 0.0f), 1.0f);
+        g = std::min(std::max(g, 0.0f), 1.0f);
+        b = std::min(std::max(b, 0.0f), 1.0f);
+
+        vertexBuffer.push_back(x);
+        vertexBuffer.push_back(y);
+        vertexBuffer.push_back(r);
+        vertexBuffer.push_back(g);
+        vertexBuffer.push_back(b);
+        vertexBuffer.push_back(1.0f);
+    }
 
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), vertexBuffer.data(), GL_STATIC_DRAW);
 
+    // 设置位置属性
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
 
+    // 设置颜色属性
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
-
-    unsigned int ibo;
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
@@ -190,7 +213,8 @@ int main(void)
         //glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
         //ASSERT(GLCheckError());
 
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        // GLCALL(glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, nullptr));
+        glDrawArrays(GL_TRIANGLE_FAN, 0, numSegments + 2);
 
         offset = offset + 0.01f;
         glUniform1f(location, offset);
