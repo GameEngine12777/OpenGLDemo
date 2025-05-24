@@ -8,6 +8,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <cmath>
+
 #define ASSERT(x) if(!(x)) __debugbreak();
 #define GLCALL(x) GLClearError(); \
     x;\
@@ -147,7 +149,6 @@ int main(void)
          0.5f, -0.5f, 0.f, 0.0f, 1.0f, 1.0f,
     };
 
-    // 请注意所有得索引缓存必须由无符号类型得数据组成
     unsigned int indices[] = {
         0, 1, 2,
         2, 3, 0,
@@ -158,12 +159,9 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW);
 
-    // 启用索引为0得顶点属性（绑定顶点位置信息）
     glEnableVertexAttribArray(0);
-    // 设置索引为0得顶点属性数据，这将决定着色器如何在一组顶点缓存数据中读取索引为0得数据（数据绑定）
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
 
-    // 绑定颜色信息
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
 
@@ -177,6 +175,10 @@ int main(void)
     unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shaderProgram);
 
+    int location = glGetUniformLocation(shaderProgram, "u_Offset");
+
+    float offset = 0.f;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -189,6 +191,9 @@ int main(void)
         //ASSERT(GLCheckError());
 
         GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        offset = std::fmod(offset + 0.01f, 1.0f);
+        glUniform1f(location, offset);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
