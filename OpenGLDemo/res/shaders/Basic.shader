@@ -1,16 +1,22 @@
 #shader vertex
 #version 330 core
 
-layout(location = 0) in vec4 position;
-layout(location = 1) in vec4 color;
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec3 aColor;
 
-out vec4 v_Color;
+out vec3 v_Color;
 
-void main()
-{
-   gl_Position = position;
-   v_Color = color;
-};
+uniform float u_Time;
+
+void main() {
+    // 心跳因子：随时间脉动
+    float scale = 1.0 + 0.05 * sin(u_Time * 6.0); // 跳动频率和幅度
+
+    vec2 scaledPos = aPos * scale;
+
+    gl_Position = vec4(scaledPos, 0.0, 1.0);
+    v_Color = aColor;
+}
 
 
 #shader fragment
@@ -24,26 +30,5 @@ in vec4 v_Color;
 
 void main()
 {
-	// 把颜色旋转（绕 RGB 通道循环）
-    float r = v_Color.r;
-    float g = v_Color.g;
-    float b = v_Color.b;
-
-    // 循环偏移颜色
-    float offset = mod(u_Offset, 3.0);
-    
-    vec3 rotatedColor;
-
-    if (offset < 1.0) {
-        float t = offset;
-        rotatedColor = vec3(mix(r, g, t), mix(g, b, t), mix(b, r, t)); // 做线性插值
-    } else if (offset < 2.0) {
-        float t = offset - 1.0;
-        rotatedColor = vec3(mix(g, b, t), mix(b, r, t), mix(r, g, t));
-    } else {
-        float t = offset - 2.0;
-        rotatedColor = vec3(mix(b, r, t), mix(r, g, t), mix(g, b, t));
-    }
-
-    color = vec4(rotatedColor, v_Color.a);
+    color = v_Color;
 };

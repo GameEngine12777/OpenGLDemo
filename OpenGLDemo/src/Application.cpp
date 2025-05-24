@@ -142,42 +142,58 @@ int main(void)
 
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 
-    float vertexBuffer[] = {
-        -0.5f, -0.5f, 1.f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, 0.f, 0.0f, 1.0f, 1.0f,
-         0.5f, -0.5f, 0.f, 0.0f, 1.0f, 1.0f,
-    };
 
-    unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0,
-    };
+    const int numPoints = 200;
+    std::vector<float> vertexBuffer;
+
+    // 中心点（白色或黑色）
+    vertexBuffer.push_back(0.0f); // x
+    vertexBuffer.push_back(0.0f); // y
+    vertexBuffer.push_back(1.0f); // r
+    vertexBuffer.push_back(1.0f); // g
+    vertexBuffer.push_back(1.0f); // b
+    vertexBuffer.push_back(1.0f); // a
+
+    // 缩放因子（把图形控制在 -1 ~ 1）
+    float scale = 0.02f;
+
+    for (int i = 0; i <= numPoints; ++i) {
+        float t = (float)i / numPoints * 2.0f * 3.1415926;
+
+        float x = 16 * pow(sin(t), 3);
+        float y = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
+
+        x *= scale;
+        y *= scale;
+
+        // 加红色
+        vertexBuffer.push_back(x);
+        vertexBuffer.push_back(y);
+        vertexBuffer.push_back(1.0f); // R
+        vertexBuffer.push_back(0.0f); // G
+        vertexBuffer.push_back(0.0f); // B
+        vertexBuffer.push_back(1.0f);
+    }
 
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), vertexBuffer.data(), GL_STATIC_DRAW);
 
+    // 设置位置属性
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
 
+    // 设置颜色属性
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
-
-    unsigned int ibo;
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
     unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shaderProgram);
 
-    int location = glGetUniformLocation(shaderProgram, "u_Offset");
-
-    float offset = 0.f;
+    int location = glGetUniformLocation(shaderProgram, "u_Time");
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -190,10 +206,11 @@ int main(void)
         //glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
         //ASSERT(GLCheckError());
 
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        // GLCALL(glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, nullptr));
+        glDrawArrays(GL_TRIANGLE_FAN, 0, numPoints + 2);
 
-        offset = offset + 0.01f;
-        glUniform1f(location, offset);
+        float timeValue = glfwGetTime();
+        glUniform1f(location, timeValue);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
