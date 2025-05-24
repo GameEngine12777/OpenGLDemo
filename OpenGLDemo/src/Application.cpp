@@ -119,15 +119,17 @@ int main(void)
 
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 
-    // 这里面由一组重复顶点数据
     float vertexBuffer[] = {
         -0.5f, -0.5f, 1.f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f,
+         0.5f,  0.5f, 0.f, 0.0f, 1.0f, 1.0f,
          0.5f, -0.5f, 0.f, 0.0f, 1.0f, 1.0f,
+    };
 
-        -0.5f, -0.5f, 1.f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, 0.f, 0.0f, 1.0f, 1.0f,
-         0.5f,  0.5f, 0.f, 1.0f, 0.0f, 1.0f
+    // 请注意所有得索引缓存必须由无符号类型得数据组成
+    unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0,
     };
 
     unsigned int buffer;
@@ -144,6 +146,11 @@ int main(void)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
 
+    unsigned int ibo;
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
     unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
@@ -155,8 +162,8 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 绘制一个正方形(这里注意一个事情，我们得顶点数据存在重复)
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // 请注意所有得索引缓存必须由无符号类型得数据组成
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
