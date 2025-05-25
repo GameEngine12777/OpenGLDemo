@@ -10,26 +10,9 @@
 
 #include <cmath>
 
-#define ASSERT(x) if(!(x)) __debugbreak();
-#define GLCALL(x) GLClearError(); \
-    x;\
-    ASSERT(GLCheckError(__FILE__, #x, __LINE__));
-
-static void GLClearError()
-{
-    // https://docs.gl/gl4/glGetError
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLCheckError(const char* file, const char* function, int line)
-{
-    while (GLenum error = glGetError())
-    {
-        std::cout << "[OpenGL error] (" << error << ") " << file << " : " << function << " : " << line << std::endl;
-        return false;
-    }
-    return true;
-}
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 struct ShaderProgramSource
 {
@@ -164,10 +147,7 @@ int main(void)
     GLCALL(glBindVertexArray(vao));
 
     // 绑定 VertexBuffer
-    unsigned int buffer;
-    GLCALL(glGenBuffers(1, &buffer));
-    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCALL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW));
+    VertexBuffer* vb = new VertexBuffer(vertexBuffer, sizeof(vertexBuffer));
 
     // 与 VAO 建立链接，绑定缓存布局
     GLCALL(glEnableVertexAttribArray(0));
@@ -176,10 +156,7 @@ int main(void)
     GLCALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float))));
 
     // 绑定 IndexBuffer
-    unsigned int ibo;
-    GLCALL(glGenBuffers(1, &ibo));
-    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-    GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
+    IndexBuffer* ib = new IndexBuffer(indices, sizeof(indices) / sizeof(unsigned int));
 
     // 绑定着色器程序
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
@@ -202,8 +179,8 @@ int main(void)
 
 
         GLCALL(glBindVertexArray(vao));
-        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-        GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+        vb->Bind();
+        ib->Bind();
         GLCALL(glUseProgram(shaderProgram));
 
 
@@ -228,9 +205,10 @@ int main(void)
     }
 
     glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &buffer); // 清理缓存
-    glDeleteBuffers(1, &ibo);
     glDeleteProgram(shaderProgram); // 清理着色器程序
+
+    delete vb;
+    delete ib;
 
     glfwTerminate();
     return 0;
