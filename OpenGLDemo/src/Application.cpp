@@ -78,19 +78,16 @@ int main(void)
 
     float offset = 0.f;
 
+    // 渲染器
+    Renderer renderer;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.Clear();
 
-        va->Bind();
-        vb->Bind();
-        ib->Bind();
-
-
-        GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-
+        renderer.Draw(va, ib, shaderProgram);
 
         offset = offset + 0.01f;
         shaderProgram->Bind();

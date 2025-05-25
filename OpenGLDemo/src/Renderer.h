@@ -12,7 +12,14 @@ void GLClearError();
 
 bool GLCheckError(const char* file, const char* function, int line);
 
+class VertexArray;
+class IndexBuffer;
+class Shader;
+
 class Renderer
 {
+public:
+    void Clear() const;
+    void Draw(const VertexArray* va, const IndexBuffer* ib, const Shader* shader) const;
 };
 
