@@ -13,6 +13,7 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
 
 struct ShaderProgramSource
 {
@@ -142,18 +143,17 @@ int main(void)
     };
 
     // 绑定 VertexArrayObject
-    unsigned int vao;
-    GLCALL(glGenVertexArrays(1, &vao));
-    GLCALL(glBindVertexArray(vao));
+    VertexArray* va = new VertexArray();
 
     // 绑定 VertexBuffer
     VertexBuffer* vb = new VertexBuffer(vertexBuffer, sizeof(vertexBuffer));
 
     // 与 VAO 建立链接，绑定缓存布局
-    GLCALL(glEnableVertexAttribArray(0));
-    GLCALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0));
-    GLCALL(glEnableVertexAttribArray(1));
-    GLCALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float))));
+    VertexBufferLayout layout;
+    layout.Push<float>(2);
+    layout.Push<float>(4);
+    va->AddBuffer(*vb, layout);
+
 
     // 绑定 IndexBuffer
     IndexBuffer* ib = new IndexBuffer(indices, sizeof(indices) / sizeof(unsigned int));
@@ -165,20 +165,13 @@ int main(void)
 
     float offset = 0.f;
 
-    // 移除绑定
-    GLCALL(glBindVertexArray(0));
-    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-    GLCALL(glUseProgram(0));
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-        GLCALL(glBindVertexArray(vao));
+        va->Bind();
         vb->Bind();
         ib->Bind();
         GLCALL(glUseProgram(shaderProgram));
@@ -191,12 +184,6 @@ int main(void)
         GLCALL(int location = glGetUniformLocation(shaderProgram, "u_Offset"));
         GLCALL(glUniform1f(location, offset));
 
-
-        GLCALL(glBindVertexArray(0));
-        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-        GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-        GLCALL(glUseProgram(0));
-
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -204,9 +191,9 @@ int main(void)
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &vao);
     glDeleteProgram(shaderProgram); // 清理着色器程序
 
+    delete va;
     delete vb;
     delete ib;
 
