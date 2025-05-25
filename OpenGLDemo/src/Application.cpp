@@ -74,8 +74,8 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
     unsigned int id = glCreateShader(type);
     const char* src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
+    GLCALL(glShaderSource(id, 1, &src, nullptr));
+    GLCALL(glCompileShader(id));
 
     // TODO:: Error Handling
     int res;
@@ -105,10 +105,10 @@ static unsigned int CreateShader(const std::string& VertexShader, const std::str
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, VertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, FragmentShader);
 
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program); // 验证有效性
+    GLCALL(glAttachShader(program, vs));
+    GLCALL(glAttachShader(program, fs));
+    GLCALL(glLinkProgram(program));
+    GLCALL(glValidateProgram(program)); // 验证有效性
 
     glDeleteShader(vs);
     glDeleteShader(fs);
@@ -123,6 +123,10 @@ int main(void)
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -154,30 +158,41 @@ int main(void)
         2, 3, 0,
     };
 
+    // 绑定 VertexArrayObject
+    unsigned int vao;
+    GLCALL(glGenVertexArrays(1, &vao));
+    GLCALL(glBindVertexArray(vao));
+
+    // 绑定 VertexBuffer
     unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW);
+    GLCALL(glGenBuffers(1, &buffer));
+    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+    GLCALL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBuffer), vertexBuffer, GL_STATIC_DRAW));
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
+    // 与 VAO 建立链接，绑定缓存布局
+    GLCALL(glEnableVertexAttribArray(0));
+    GLCALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0));
+    GLCALL(glEnableVertexAttribArray(1));
+    GLCALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float))));
 
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
-
+    // 绑定 IndexBuffer
     unsigned int ibo;
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    GLCALL(glGenBuffers(1, &ibo));
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+    GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
 
+    // 绑定着色器程序
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
-
     unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
-    glUseProgram(shaderProgram);
-
-    int location = glGetUniformLocation(shaderProgram, "u_Offset");
+    GLCALL(glUseProgram(shaderProgram));
 
     float offset = 0.f;
+
+    // 移除绑定
+    GLCALL(glBindVertexArray(0));
+    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+    GLCALL(glUseProgram(0));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -185,15 +200,25 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        //GLClearError();
-        //// 请注意所有得索引缓存必须由无符号类型得数据组成
-        //glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
-        //ASSERT(GLCheckError());
+
+        GLCALL(glBindVertexArray(vao));
+        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+        GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+        GLCALL(glUseProgram(shaderProgram));
+
 
         GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
+
         offset = offset + 0.01f;
-        glUniform1f(location, offset);
+        GLCALL(int location = glGetUniformLocation(shaderProgram, "u_Offset"));
+        GLCALL(glUniform1f(location, offset));
+
+
+        GLCALL(glBindVertexArray(0));
+        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+        GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+        GLCALL(glUseProgram(0));
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -202,7 +227,9 @@ int main(void)
         glfwPollEvents();
     }
 
+    glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &buffer); // 清理缓存
+    glDeleteBuffers(1, &ibo);
     glDeleteProgram(shaderProgram); // 清理着色器程序
 
     glfwTerminate();
