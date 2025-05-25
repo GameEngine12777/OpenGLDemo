@@ -74,8 +74,8 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
     unsigned int id = glCreateShader(type);
     const char* src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
+    GLCALL(glShaderSource(id, 1, &src, nullptr));
+    GLCALL(glCompileShader(id));
 
     // TODO:: Error Handling
     int res;
@@ -105,10 +105,10 @@ static unsigned int CreateShader(const std::string& VertexShader, const std::str
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, VertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, FragmentShader);
 
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program); // 验证有效性
+    GLCALL(glAttachShader(program, vs));
+    GLCALL(glAttachShader(program, fs));
+    GLCALL(glLinkProgram(program));
+    GLCALL(glValidateProgram(program)); // 验证有效性
 
     glDeleteShader(vs);
     glDeleteShader(fs);
@@ -176,22 +176,22 @@ int main(void)
     }
 
     unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), vertexBuffer.data(), GL_STATIC_DRAW);
+    GLCALL(glGenBuffers(1, &buffer));
+    GLCALL(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+    GLCALL(glBufferData(GL_ARRAY_BUFFER, vertexBuffer.size() * sizeof(float), vertexBuffer.data(), GL_STATIC_DRAW));
 
     // 设置位置属性
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0);
+    GLCALL(glEnableVertexAttribArray(0));
+    GLCALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)0));
 
     // 设置颜色属性
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float)));
+    GLCALL(glEnableVertexAttribArray(1));
+    GLCALL(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*)(2 * sizeof(float))));
 
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
     unsigned int shaderProgram = CreateShader(source.VertexSource, source.FragmentSource);
-    glUseProgram(shaderProgram);
+    GLCALL(glUseProgram(shaderProgram));
 
     int location = glGetUniformLocation(shaderProgram, "u_Time");
 
@@ -207,7 +207,7 @@ int main(void)
         //ASSERT(GLCheckError());
 
         // GLCALL(glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, nullptr));
-        glDrawArrays(GL_TRIANGLE_FAN, 0, numPoints + 2);
+        GLCALL(glDrawArrays(GL_TRIANGLE_FAN, 0, numPoints + 2));
 
         float timeValue = glfwGetTime();
         glUniform1f(location, timeValue);
