@@ -13,11 +13,12 @@ public:
 	void UnBind() const;
 
 	// Set uniform
+	void SetUniform1i(const std::string& name, int v1);
 	void SetUniform1f(const std::string& name, float v1);
 	void SetUniform4f(const std::string& name, float v1, float v2, float v3, float v4);
 
 private:
-	unsigned int GetUniformLocation(const std::string& name);
+	int GetUniformLocation(const std::string& name);
 
 	struct ShaderProgramSource
 	{
@@ -31,6 +32,6 @@ private:
 private:
 	unsigned int m_RendererID;
 	std::string m_FilePath;
-	std::unordered_map<std::string, unsigned int> m_UniformLocationCache;
+	std::unordered_map<std::string, int> m_UniformLocationCache;
 };
 
