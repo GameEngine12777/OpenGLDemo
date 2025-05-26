@@ -15,6 +15,9 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 
 int main(void)
 {
@@ -82,12 +85,17 @@ int main(void)
     // 绑定 IndexBuffer
     IndexBuffer* ib = new IndexBuffer(indices, sizeof(indices) / sizeof(unsigned int));
 
+    // 创建正交投影矩阵
+    glm::mat4 proj = glm::ortho<float>(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
     // 绑定着色器程序
     Shader* shaderProgram = new Shader("res/shaders/Basic.shader");
 
     Texture* texture = new Texture("res/textures/ChernoLogo.png");
     texture->Bind();
+    shaderProgram->Bind();
     shaderProgram->SetUniform1i("u_Texture", 0);
+    shaderProgram->SetUniformMat4f("u_MVP", proj);
 
     // 渲染器
     Renderer renderer;
