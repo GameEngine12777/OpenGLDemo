@@ -84,9 +84,23 @@ int main(void)
 
     // 绑定 IndexBuffer
     IndexBuffer* ib = new IndexBuffer(indices, sizeof(indices) / sizeof(unsigned int));
+    ib->UnBind();
 
     // 创建正交投影矩阵
     glm::mat4 proj = glm::ortho<float>(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
+    // 相机
+    glm::mat4 cameraMatrix = glm::mat4(1.0f);
+    cameraMatrix = glm::translate(cameraMatrix, glm::vec3(0.f, 0.f, 0.f));
+    cameraMatrix = glm::rotate(cameraMatrix, glm::radians(0.f), glm::vec3(0.f, 0.f, 1.f));
+
+    // 视口矩阵（）
+    glm::mat4 view = glm::mat4(1.0f);
+
+    // 模型矩阵变换
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // 位置矩阵
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f)); // 旋转矩阵
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(1.f, 1.0f, 1.0f)); // 缩放矩阵
 
     // 绑定着色器程序
     Shader* shaderProgram = new Shader("res/shaders/Basic.shader");
@@ -95,7 +109,6 @@ int main(void)
     texture->Bind();
     shaderProgram->Bind();
     shaderProgram->SetUniform1i("u_Texture", 0);
-    shaderProgram->SetUniformMat4f("u_MVP", proj);
 
     // 渲染器
     Renderer renderer;
@@ -106,6 +119,17 @@ int main(void)
         /* Render here */
         renderer.Clear();
 
+        // 相机移动、旋转
+        // cameraMatrix = glm::translate(cameraMatrix, glm::vec3(-0.01f, 0.f, 0.f));
+        cameraMatrix = glm::rotate(cameraMatrix, glm::radians(1.1f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        // 重置视口矩阵（相机在场景得矩阵取逆，获取视口矩阵）
+        view = glm::inverse(cameraMatrix);
+
+        shaderProgram->Bind();
+        shaderProgram->SetUniformMat4f("u_MVP", proj * view * modelMatrix);
+
+        
         renderer.Draw(va, ib, shaderProgram);
 
         /* Swap front and back buffers */
