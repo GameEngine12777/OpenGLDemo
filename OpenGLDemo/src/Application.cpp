@@ -17,6 +17,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw_gl3.h>
 
 
 int main(void)
@@ -32,7 +34,7 @@ int main(void)
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(640 * 2, 480 * 2, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -47,6 +49,17 @@ int main(void)
         std::cout << "glew error!" << std::endl;
     }
 
+    // Setup ImGui binding
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+    ImGui_ImplGlfwGL3_Init(window, true);
+
+    // Setup style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
 
     // 开启混合功能，混合开启后，片段着色器输出的颜色值会与帧缓冲中已有的颜色值进行混合，以产生最终的像素颜色。
@@ -59,10 +72,10 @@ int main(void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     float vertexBuffer[] = {
-        -0.5f, -0.5f, 0.f, 0.0f,
-        -0.5f,  0.5f, 0.f, 1.0f,
-         0.5f,  0.5f, 1.f, 1.0f,
-         0.5f, -0.5f, 1.f, 0.0f,
+        -10.5f, -10.5f, 0.f, 0.0f,
+        -10.5f,  10.5f, 0.f, 1.0f,
+         10.5f,  10.5f, 1.f, 1.0f,
+         10.5f, -10.5f, 1.f, 0.0f,
     };
 
     unsigned int indices[] = {
@@ -87,7 +100,7 @@ int main(void)
     ib->UnBind();
 
     // 创建正交投影矩阵
-    glm::mat4 proj = glm::ortho<float>(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+    glm::mat4 proj = glm::ortho<float>(-200.0f, 200.0f, -100.5f, 100.5f, -1.0f, 1.0f);
 
     // 相机
     glm::mat4 cameraMatrix = glm::mat4(1.0f);
@@ -97,8 +110,11 @@ int main(void)
     // 视口矩阵（）
     glm::mat4 view = glm::mat4(1.0f);
 
+    // 模型位置信息
+    glm::vec3 modelLoc = glm::vec3(0.0f, 0.0f, 0.0f);
+
     // 模型矩阵变换
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // 位置矩阵
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), modelLoc); // 位置矩阵
     modelMatrix = glm::rotate(modelMatrix, glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f)); // 旋转矩阵
     modelMatrix = glm::scale(modelMatrix, glm::vec3(1.f, 1.0f, 1.0f)); // 缩放矩阵
 
@@ -119,9 +135,13 @@ int main(void)
         /* Render here */
         renderer.Clear();
 
+        ImGui_ImplGlfwGL3_NewFrame();
+
+        modelMatrix = glm::translate(glm::mat4(1.0f), modelLoc);
+
         // 相机移动、旋转
         // cameraMatrix = glm::translate(cameraMatrix, glm::vec3(-0.01f, 0.f, 0.f));
-        cameraMatrix = glm::rotate(cameraMatrix, glm::radians(1.1f), glm::vec3(0.0f, 0.0f, 1.0f));
+        // cameraMatrix = glm::rotate(cameraMatrix, glm::radians(1.1f), glm::vec3(0.0f, 0.0f, 1.0f));
 
         // 重置视口矩阵（相机在场景得矩阵取逆，获取视口矩阵）
         view = glm::inverse(cameraMatrix);
@@ -131,6 +151,15 @@ int main(void)
 
         
         renderer.Draw(va, ib, shaderProgram);
+
+        {
+            // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+            ImGui::SliderFloat3("modelLoc", &modelLoc[0], -50.f, 50.f);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+
+        ImGui::Render();
+        ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -144,6 +173,8 @@ int main(void)
     delete ib;
     delete shaderProgram;
 
+    ImGui_ImplGlfwGL3_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
     return 0;
 }
