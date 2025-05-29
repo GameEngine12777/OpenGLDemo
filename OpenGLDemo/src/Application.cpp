@@ -34,7 +34,7 @@ int main(void)
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640 * 2, 480 * 2, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(640 * 2, 480 * 1.5, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -112,6 +112,7 @@ int main(void)
 
     // 模型位置信息
     glm::vec3 modelLoc = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 modelLoc1 = glm::vec3(0.0f, 0.0f, 0.0f);
 
     // 模型矩阵变换
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), modelLoc); // 位置矩阵
@@ -121,8 +122,8 @@ int main(void)
     // 绑定着色器程序
     Shader* shaderProgram = new Shader("res/shaders/Basic.shader");
 
-    Texture* texture = new Texture("res/textures/ChernoLogo.png");
-    texture->Bind();
+    Texture* texture1 = new Texture("res/textures/ChernoLogo.png");
+    Texture* texture2 = new Texture("res/textures/IMG_20220707_191336.jpg");
     shaderProgram->Bind();
     shaderProgram->SetUniform1i("u_Texture", 0);
 
@@ -146,15 +147,26 @@ int main(void)
         // 重置视口矩阵（相机在场景得矩阵取逆，获取视口矩阵）
         view = glm::inverse(cameraMatrix);
 
-        shaderProgram->Bind();
-        shaderProgram->SetUniformMat4f("u_MVP", proj * view * modelMatrix);
+        {
+            shaderProgram->Bind();
+            texture1->Bind();
+            shaderProgram->SetUniformMat4f("u_MVP", proj* view* modelMatrix);
+            shaderProgram->SetUniform1i("u_Texture", 0);
+            renderer.Draw(va, ib, shaderProgram);
+        }
 
-        
-        renderer.Draw(va, ib, shaderProgram);
+        {
+            shaderProgram->Bind();
+            texture2->Bind(1);
+            shaderProgram->SetUniformMat4f("u_MVP", proj * view * glm::translate(glm::mat4(1.0f), modelLoc1));
+            shaderProgram->SetUniform1i("u_Texture", 1);
+            renderer.Draw(va, ib, shaderProgram);
+        }
 
         {
             // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
             ImGui::SliderFloat3("modelLoc", &modelLoc[0], -50.f, 50.f);
+            ImGui::SliderFloat3("modelLoc1", &modelLoc1[0], -50.f, 50.f);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         }
 
