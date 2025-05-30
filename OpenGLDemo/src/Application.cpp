@@ -119,16 +119,17 @@ int main(void)
     // 渲染器
     Renderer renderer;
 
-    Test::TestClearColor testClearColor;
+    Test::Test* currentTest = nullptr;
+    Test::TestMenu* testMenu = new Test::TestMenu(currentTest);
+    currentTest = testMenu;
+
+    testMenu->ReigsterTest<Test::TestClearColor>("Clear Color");
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
         renderer.Clear();
-
-        testClearColor.OnUpdate(0.f);
-        testClearColor.OnRender();
 
         // 相机移动、旋转
         glm::mat4 cameraMatrix = glm::translate(glm::mat4(1.f), cameraLoc);
@@ -160,14 +161,26 @@ int main(void)
         {
             ImGui_ImplGlfwGL3_NewFrame();
 
-            testClearColor.OnImGuiRender();
-
             // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
             ImGui::SliderFloat3("modelLoc", &modelLoc[0], -50.f, 50.f);
             modelLoc.z = 0;
             ImGui::SliderFloat3("modelLoc1", &modelLoc1[0], -50.f, 50.f);
             modelLoc1.z = 0;
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+            if (currentTest)
+            {
+                currentTest->OnUpdate(0.f);
+                currentTest->OnRender();
+                ImGui::Begin("Test");
+                if (currentTest != testMenu && ImGui::Button("<-"))
+                {
+                    delete currentTest;
+                    currentTest = testMenu;
+                }
+                currentTest->OnImGuiRender();
+                ImGui::End();
+            }
 
             ImGui::Render();
             ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
@@ -184,6 +197,8 @@ int main(void)
     delete vb;
     delete ib;
     delete shaderProgram;
+    delete testMenu;
+    if (currentTest) delete currentTest;
 
     ImGui_ImplGlfwGL3_Shutdown();
     ImGui::DestroyContext();
