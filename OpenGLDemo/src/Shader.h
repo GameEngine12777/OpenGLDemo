@@ -21,7 +21,7 @@ public:
 	void SetUniformMat4f(const std::string& name, const glm::mat4& matrix);
 
 private:
-	int GetUniformLocation(const std::string& name);
+	int GetUniformLocation(const std::string& name) const;
 
 	struct ShaderProgramSource
 	{
@@ -35,6 +35,6 @@ private:
 private:
 	unsigned int m_RendererID;
 	std::string m_FilePath;
-	std::unordered_map<std::string, int> m_UniformLocationCache;
+	mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 };
 
